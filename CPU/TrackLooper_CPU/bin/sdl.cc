@@ -17,8 +17,8 @@ int main(int argc, char** argv)
 
     // Read the options
     options.add_options()
-        ("m,mode"           , "Run mode (0=build_module_map, 1=print_module_centroid, 2=mtv, 3=algo_eff, 4=tracklet, 5=write_sdl_ntuple, 6=pixel_tracklet_eff)", cxxopts::value<int>()->default_value("-1"))
-        ("i,input"          , "Comma separated input file list OR if just a directory is provided it will glob all in the directory BUT must end with '/' for the path", cxxopts::value<std::string>()->default_value("Pt2GeV_STANDARD_SAMPLE"))
+        ("m,mode"           , "Run mode (0=build_module_map, 1=print_module_centroid, 2=mtv, 3=algo_eff, 4=tracklet, 5=write_sdl_ntuple, 6=pixel_tracklet_eff)", cxxopts::value<int>()->default_value("5"))
+        ("i,input"          , "Comma separated input file list OR if just a directory is provided it will glob all in the directory BUT must end with '/' for the path", cxxopts::value<std::string>()->default_value("muonGun"))
         ("t,tree"           , "Name of the tree in the root file to open and loop over"                                             , cxxopts::value<std::string>()->default_value("trackingNtuple/tree"))
         ("o,output"         , "Output file name"                                                                                    , cxxopts::value<std::string>())
         ("N,nmatch"         , "N match for MTV-like plots"                                                                          , cxxopts::value<int>()->default_value("9"))
@@ -52,8 +52,15 @@ int main(int argc, char** argv)
     ana.input_file_list_tstring = result["input"].as<std::string>();
 
     // A default value one
-    if (ana.input_file_list_tstring.EqualTo("Pt2GeV_STANDARD_SAMPLE"))
-        ana.input_file_list_tstring = "/home/users/phchang/public_html/analysis/sdl/trackingNtuple/CMSSW_10_4_0/src/trackingNtuple_100_pt0p5_2p0.root";
+    if (ana.input_file_list_tstring.EqualTo("muonGun"))
+        ana.input_file_list_tstring = "/nfs-7/userdata/phchang/trackingNtuple/trackingNtuple_100_pt0p5_2p0.root";
+    else if (ana.input_file_list_tstring.EqualTo("muonGun_highE"))
+        ana.input_file_list_tstring = "/nfs-7/userdata/phchang/trackingNtuple/trackingNtuple_10MuGun.root";
+    else if (ana.input_file_list_tstring.EqualTo("pionGun"))
+        ana.input_file_list_tstring = "/nfs-7/userdata/phchang/trackingNtuple/trackingNtuple_1pion_10k_pt0p5_50p0.root";
+    else if (ana.input_file_list_tstring.EqualTo("PU200"))
+        ana.input_file_list_tstring = "/nfs-7/userdata/bsathian/SDL_trackingNtuple/ttbar_highPU/trackingNtuple_with_PUinfo_500_evts.root";
+
 
     //_______________________________________________________________________________
     // --tree
@@ -174,16 +181,7 @@ int main(int argc, char** argv)
 
     //_______________________________________________________________________________
     // --mode
-    if (result.count("mode"))
-    {
-        ana.mode = result["mode"].as<int>();
-    }
-    else
-    {
-        std::cout << options.help() << std::endl;
-        std::cout << "ERROR: --mode was not recognized! Check your arguments." << std::endl;
-        exit(1);
-    }
+    ana.mode = result["mode"].as<int>();
 
     // Printing out the option settings overview
     std::cout <<  "=========================================================" << std::endl;
@@ -237,6 +235,11 @@ int main(int argc, char** argv)
     TObjString input;
     input.SetString(result["input"].as<std::string>().c_str());
     ana.output_tfile->WriteObject(&input, "input");
+
+    // Write out whether it's GPU or CPU
+    TObjString version;
+    version.SetString("CPU");
+    ana.output_tfile->WriteObject(&version, "version");
 
     // Run depending on the mode
     switch (ana.mode)
